@@ -103,6 +103,16 @@ well). There are no restrictions on its use. For more information, please see:
 https://librivox.org/pages/public-domain.
 
 
+CHANGELOG
+
+* 1.0 (July 8, 2017):
+  Initial release
+
+* 1.1 (Feb 19, 2018):
+  Version 1.0 included 30 .wav files with no corresponding annotations in
+  metadata.csv. These have been removed in version 1.1. Thanks to Rafael Valle
+  for spotting this.
+
 
 CREDITS
 
@@ -123,8 +133,13 @@ This dataset consists of excerpts from the following works:
 Recordings by Linda Johnson. Alignment and annotation by Keith Ito. All text,
 audio, and annotations are in the public domain.
 
-If you would like to cite this work, please do so by linking to:
-  https://keithito.com/LJ-Speech-Dataset
+There's no requirement to cite this work, but if you'd like to do so, you can
+link to: https://keithito.com/LJ-Speech-Dataset
 
-or by using the citation:
-  Ito, Keith. The LJ Speech Dataset. 2017. https://keithito.com/LJ-Speech-Dataset.
+or use the following:
+@misc{ljspeech17,
+  author       = {Keith Ito},
+  title        = {The LJ Speech Dataset},
+  howpublished = {\url{https://keithito.com/LJ-Speech-Dataset/}},
+  year         = 2017
+}

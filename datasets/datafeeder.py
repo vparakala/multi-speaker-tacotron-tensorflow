@@ -143,10 +143,20 @@ class DataFeeder(threading.Thread):
             tf.placeholder(tf.float32, [None, None, hparams.num_freq], 'linear_targets'),
         ]
 
+
+
         # Create queue for buffering data:
         dtypes = [tf.int32, tf.int32, tf.float32, tf.float32, tf.float32]
 
+
         self.is_multi_speaker = len(self.data_dirs) > 1
+        self.use_voice_embeddings = config.use_voice_embeddings
+
+        if config.use_voice_embeddings:
+            self._placeholders.append(
+                tf.placeholder(tf.float32, [None, None, hparams.num_mels], 'mel_inputs'),
+            )
+            dtypes.append(tf.float32)
 
         if self.is_multi_speaker:
             self._placeholders.append(
@@ -162,6 +172,11 @@ class DataFeeder(threading.Thread):
         if self.is_multi_speaker:
             self.inputs, self.input_lengths, self.loss_coeff, \
                     self.mel_targets, self.linear_targets, self.speaker_id = queue.dequeue()
+
+        elif self.use_voice_embeddings:
+             self.inputs, self.input_lengths, self.loss_coeff, \
+                    self.mel_targets, self.linear_targets, self.mel_inputs = queue.dequeue()
+           
         else:
             self.inputs, self.input_lengths, self.loss_coeff, \
                     self.mel_targets, self.linear_targets = queue.dequeue()
@@ -171,6 +186,9 @@ class DataFeeder(threading.Thread):
         self.loss_coeff.set_shape(self._placeholders[2].shape)
         self.mel_targets.set_shape(self._placeholders[3].shape)
         self.linear_targets.set_shape(self._placeholders[4].shape)
+
+        if self.use_voice_embeddings:
+            self.mel_inputs.set_shape(self._placeholders[5].shape)
 
         if self.is_multi_speaker:
             self.speaker_id.set_shape(self._placeholders[5].shape)
@@ -231,14 +249,14 @@ class DataFeeder(threading.Thread):
                     example = [self._get_next_example(data_dir) \
                             for _ in range(int(n * self._batches_per_group * self.data_ratio[data_dir]))]
                 examples.extend(example)
-            examples.sort(key=lambda x: x[-1])
+            examples.sort(key=lambda x: x[-2])
 
             batches = [examples[i:i+n] for i in range(0, len(examples), n)]
             self.rng.shuffle(batches)
 
         log('Generated %d batches of size %d in %.03f sec' % (len(batches), n, time.time() - start))
         for batch in batches:
-            feed_dict = dict(zip(self._placeholders, _prepare_batch(batch, r, self.rng, self.data_type)))
+            feed_dict = dict(zip(self._placeholders, _prepare_batch(batch, r, self.rng, self.data_type, self.is_multi_speaker, self.use_voice_embeddings)))
             self._session.run(self._enqueue_op, feed_dict=feed_dict)
             self._step += 1
 
@@ -275,6 +293,7 @@ class DataFeeder(threading.Thread):
 
         input_data = data['tokens']
         mel_target = data['mel']
+        mel_input = data['log_mel']
 
         if 'loss_coeff' in data:
             loss_coeff = data['loss_coeff']
@@ -283,10 +302,10 @@ class DataFeeder(threading.Thread):
         linear_target = data['linear']
 
         return (input_data, loss_coeff, mel_target, linear_target, 
-                self.data_dir_to_id[data_dir], len(linear_target))
+                self.data_dir_to_id[data_dir], len(linear_target), mel_input)
 
 
-def _prepare_batch(batch, reduction_factor, rng, data_type=None):
+def _prepare_batch(batch, reduction_factor, rng, data_type=None, is_multi_speaker=False, use_voice_embeddings=False):
     if data_type == 'train':
         rng.shuffle(batch)
 
@@ -297,7 +316,11 @@ def _prepare_batch(batch, reduction_factor, rng, data_type=None):
     mel_targets = _prepare_targets([x[2] for x in batch], reduction_factor)
     linear_targets = _prepare_targets([x[3] for x in batch], reduction_factor)
 
-    if len(batch[0]) == 6:
+    if use_voice_embeddings:
+        mel_inputs = _prepare_targets([x[6] for x in batch], reduction_factor)
+        return (inputs, input_lengths, loss_coeff, mel_targets, linear_targets, mel_inputs)
+
+    if is_multi_speaker:
         speaker_id = np.asarray([x[4] for x in batch], dtype=np.int32)
         return (inputs, input_lengths, loss_coeff,
                 mel_targets, linear_targets, speaker_id)

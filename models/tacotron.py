@@ -21,7 +21,7 @@ class Tacotron():
     def initialize(
             self, inputs, input_lengths, num_speakers, speaker_id,
             mel_targets=None, linear_targets=None, loss_coeff=None,
-            rnn_decoder_test_mode=False, is_randomly_initialized=False,
+            mel_inputs=None, rnn_decoder_test_mode=False, is_randomly_initialized=False,
         ):
         is_training = linear_targets is not None
         self.is_randomly_initialized = is_randomly_initialized
@@ -39,7 +39,14 @@ class Tacotron():
                     tf.nn.embedding_lookup(char_embed_table, inputs)
 
             self.num_speakers = num_speakers
-            if self.num_speakers > 1:
+            if mel_inputs is not None:
+                speaker_embed = get_voice_embeddings(mel_inputs, is_training, 'voice_embedding')
+                before_highway = None
+                encoder_rnn_init_state = None
+                attention_rnn_init_state = None
+                decoder_rnn_init_states = None
+
+            elif self.num_speakers > 1:
                 if hp.speaker_embedding_size != 1:
                     speaker_embed_table = tf.get_variable(
                             'speaker_embedding',

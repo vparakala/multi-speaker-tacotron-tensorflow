@@ -152,12 +152,22 @@ def train(log_dir, config):
 
     with tf.variable_scope('model') as scope:
         model = create_model(hparams)
-        model.initialize(
-                train_feeder.inputs, train_feeder.input_lengths,
-                num_speakers,  train_feeder.speaker_id,
-                train_feeder.mel_targets, train_feeder.linear_targets,
-                train_feeder.loss_coeff,
-                is_randomly_initialized=is_randomly_initialized)
+        if config.use_voice_embeddings:
+            model.initialize(
+                    train_feeder.inputs, train_feeder.input_lengths,
+                    num_speakers,  train_feeder.speaker_id,
+                    train_feeder.mel_targets, train_feeder.linear_targets,
+                    train_feeder.loss_coeff,
+                    train_feeder.mel_inputs,
+                    is_randomly_initialized=is_randomly_initialized)
+
+        else:
+            model.initialize(
+                    train_feeder.inputs, train_feeder.input_lengths,
+                    num_speakers,  train_feeder.speaker_id,
+                    train_feeder.mel_targets, train_feeder.linear_targets,
+                    train_feeder.loss_coeff,
+                    is_randomly_initialized=is_randomly_initialized)
 
         model.add_loss()
         model.add_optimizer(global_step)
@@ -165,12 +175,24 @@ def train(log_dir, config):
 
     with tf.variable_scope('model', reuse=True) as scope:
         test_model = create_model(hparams)
-        test_model.initialize(
-                test_feeder.inputs, test_feeder.input_lengths,
-                num_speakers, test_feeder.speaker_id,
-                test_feeder.mel_targets, test_feeder.linear_targets,
-                test_feeder.loss_coeff, rnn_decoder_test_mode=True,
-                is_randomly_initialized=is_randomly_initialized)
+        if config.use_voice_embeddings:
+            test_model.initialize(
+                    test_feeder.inputs, test_feeder.input_lengths,
+                    num_speakers, test_feeder.speaker_id,
+                    test_feeder.mel_targets, test_feeder.linear_targets,
+                    test_feeder.loss_coeff, 
+                    test_feeder.mel_inputs,
+                    rnn_decoder_test_mode=True,
+                    is_randomly_initialized=is_randomly_initialized)
+        else:
+            test_model.initialize(
+                    test_feeder.inputs, test_feeder.input_lengths,
+                    num_speakers, test_feeder.speaker_id,
+                    test_feeder.mel_targets, test_feeder.linear_targets,
+                    test_feeder.loss_coeff, 
+                    rnn_decoder_test_mode=True,
+                    is_randomly_initialized=is_randomly_initialized)
+
         test_model.add_loss()
 
     test_stats = add_stats(test_model, model, scope_name='test')
@@ -290,7 +312,7 @@ def main():
     parser.add_argument('--data_paths', default='datasets/kr_example')
     parser.add_argument('--load_path', default=None)
     parser.add_argument('--initialize_path', default=None)
-
+    parser.add_argument('--use_voice_embeddings', default=False)
     parser.add_argument('--num_test_per_speaker', type=int, default=2)
     parser.add_argument('--random_seed', type=int, default=123)
     parser.add_argument('--summary_interval', type=int, default=100)

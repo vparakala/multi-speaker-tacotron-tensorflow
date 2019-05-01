@@ -129,3 +129,35 @@ def conv1d(inputs, kernel_size, channels, activation, is_training, scope):
             activation=activation,
             padding='same')
         return tf.layers.batch_normalization(conv1d_output, training=is_training)
+
+def get_voice_embeddings(inputs, is_training, scope):
+   out = tf.expand_dims(inputs, -1)
+
+   out = tf.layers.conv2d(out, 2, (9, 3), (1, 1), activation=tf.nn.relu)  
+   out = tf.layers.batch_normalization(out, training=is_training)
+
+   out = tf.layers.conv2d(out, 4, (8, 4), (1, 1), activation=tf.nn.relu)  
+   out = tf.layers.batch_normalization(out, training=is_training)
+
+   out = tf.layers.conv2d(out, 8, (8, 4), (1, 1), activation=tf.nn.relu)  
+   out = tf.layers.batch_normalization(out, training=is_training)
+
+   out = tf.layers.conv2d(out, 16, (8, 3), (1, 1), activation=tf.nn.relu)  
+   out = tf.layers.batch_normalization(out, training=is_training)
+
+   out = tf.layers.conv2d(out, 32, (8, 3), (1, 1), activation=tf.nn.relu)  
+   out = tf.layers.batch_normalization(out, training=is_training)
+
+   out = tf.layers.conv2d(out, 64, (8, 3), (1, 1), activation=tf.nn.relu)  
+   out = tf.layers.batch_normalization(out, training=is_training)
+
+   batch_size, height, width, channels = out.get_shape()
+
+   out = tf.reduce_max(out, axis=1)
+   out = tf.reduce_max(out, axis=2)
+
+   out = tf.layers.dense(out, 64, activation=tf.nn.relu)
+   out = tf.layers.dropout(out, training=is_training)
+   out = tf.layers.dense(out, 16, activation=tf.nn.relu)
+   out = tf.layers.dropout(out, training=is_training)
+   return out

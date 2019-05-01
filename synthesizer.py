@@ -289,6 +289,7 @@ def plot_graph_and_save_audio(args,
         return result
 
 def get_most_recent_checkpoint(checkpoint_dir, checkpoint_step=None):
+    print(checkpoint_dir)
     if checkpoint_step is None:
         checkpoint_paths = [path for path in glob("{}/*.ckpt-*.data-*".format(checkpoint_dir))]
         idxes = [int(os.path.basename(path).split('-')[1].split('.')[0]) for path in checkpoint_paths]

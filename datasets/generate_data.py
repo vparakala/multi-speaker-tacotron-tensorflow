@@ -152,10 +152,12 @@ def _process_utterance(audio_path, data_dir, tokens, loss_coeff):
 
         linear_spectrogram = spectrogram(wav).astype(np.float32)
         mel_spectrogram = melspectrogram(wav).astype(np.float32)
+        log_mel_spectrogram = np.log(mel_spectrogram + 1e-10)
 
         data = {
             "linear": linear_spectrogram.T,
             "mel": mel_spectrogram.T,
+            "log_mel": log_mel_spectrogram.T,
             "tokens": tokens,
             "loss_coeff": loss_coeff,
         }
