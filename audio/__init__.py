@@ -21,7 +21,7 @@ def load_audio(path, pre_silence_length=0, post_silence_length=0):
 
 def save_audio(audio, path, sample_rate=None):
     audio *= 32767 / max(0.01, np.max(np.abs(audio)))
-    librosa.output.write_wav(path, audio.astype(np.int16),
+    librosa.output.write_wav(path, audio.astype(np.float32),
             hparams.sample_rate if sample_rate is None else sample_rate)
 
     print(" [*] Audio saved: {}".format(path))
